@@ -19,7 +19,7 @@ let currentRound = 1;
 let heartsLeft = MAX_HEARTS;
 let oddCardIndex = 0;
 let hasGuessedThisRound = false;
-let currentHintIndex = 0; // which hint number in this round
+let currentHintIndex = -1; // -1 = no hint shown this round yet
 
 // Vocabulary for hints
 const attributes = [
@@ -211,11 +211,12 @@ function renderCards() {
   }
 
   hasGuessedThisRound = false;
-  currentHintIndex = 0;
+  currentHintIndex = -1; // no hint yet
 
-  // Show a hint at the start of the round
-  const firstHint = generateHint(currentLevel, currentHintIndex);
-  hintBox.textContent = "Hint 1: " + firstHint;
+  // Reset hint box + button text
+  hintBox.textContent =
+    'Press "Show Hint" to get a clue for this round.';
+  moreHintBtn.textContent = "Show Hint";
 }
 
 // Handle card click (guess)
@@ -262,7 +263,11 @@ function onCardClick(e) {
     const oddLabel = String.fromCharCode(65 + oddCardIndex);
 
     // Give an extra hint after a wrong guess
-    currentHintIndex++;
+    if (currentHintIndex < 0) {
+      currentHintIndex = 0;
+    } else {
+      currentHintIndex++;
+    }
     const extraHint = generateHint(currentLevel, currentHintIndex);
 
     hintBox.textContent =
@@ -270,6 +275,9 @@ function onCardClick(e) {
       `You guessed ${String.fromCharCode(
         65 + index
       )}, but the odd card was ${oddLabel}.`;
+
+    // Make sure button label matches the "we can keep going" idea
+    moreHintBtn.textContent = "Next Hint";
 
     // Mark the correct one too
     const correctCard = document.querySelector(
@@ -329,11 +337,19 @@ nextLevelBtn.addEventListener("click", () => {
   }
 });
 
-// More hint button
+// Hint button: first click = Show Hint, then Next Hint
 moreHintBtn.addEventListener("click", () => {
-  currentHintIndex++;
+  if (currentHintIndex < 0) {
+    currentHintIndex = 0; // first hint
+  } else {
+    currentHintIndex++; // next hint
+  }
+
   const hintText = generateHint(currentLevel, currentHintIndex);
   hintBox.textContent = `Hint ${currentHintIndex + 1}: ${hintText}`;
+
+  // After first press, always show "Next Hint"
+  moreHintBtn.textContent = "Next Hint";
 });
 
 // Restart game
