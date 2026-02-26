@@ -1,40 +1,282 @@
-// Game Configuration
-const STORES = ['🍞 Bakery', '📚 Stationary Store', '🛒 Supermarket', '🏪 Convenience Store', '🍔 Hamburger Store', '🏥 Hospital'];
-const STREETS = ['A', 'B'];
-const POSITIONS = [1, 2, 3];
+// Core data: correct mapping of places to zones
+// (you can change this to match your puzzle)
+const correctMapping = {
+  bakery: "bakery",
+  stationery: "stationery",
+  supermarket: "supermarket",
+  convenience: "convenience",
+  hamburger: "hamburger",
+  hospital: "hospital",
+};
 
-// Game Levels Data
-const LEVELS = [
-    {
-        id: 1,
-        clues: [
-            'The Hamburger Store is on Street A',
-            'The Hospital is adjacent to the Supermarket on the same street',
-            'The Bakery is at position 1 on Street B'
-        ],
-        correctAnswer: {
-            A1: '🍔 Hamburger Store',
-            A2: '📚 Stationary Store',
-            A3: '🛒 Supermarket',
-            B1: '🍞 Bakery',
-            B2: '🏪 Convenience Store',
-            B3: '🏥 Hospital'
-        },
-        question: 'Which store is at position 2 on Street A?',
-        options: ['🍞 Bakery', '📚 Stationary Store', '🛒 Supermarket', '🏪 Convenience Store']
-    },
-    {
-        id: 2,
-        clues: [
-            'The Supermarket is not adjacent to the Hospital',
-            'The Stationary Store is between the Bakery and the Hamburger Store',
-            'The Convenience Store is on Street B at position 3',
-            'The Bakery is on the same side as the Hospital'
-        ],
-        correctAnswer: {
-            A1: '🍔 Hamburger Store',
-            A2: '📚 Stationary Store',
-            A3: '🛒 Supermarket',
+const streetEl = document.getElementById("street");
+const placesListEl = document.getElementById("places-list");
+const checkBtn = document.getElementById("check-btn");
+const resetBtn = document.getElementById("reset-btn");
+const feedbackEl = document.getElementById("feedback");
+
+// Track current placement: zoneId -> placeKey
+// zoneId is the zone's data-place, placeKey is the chip's data-place
+const placements = {};
+
+// Drag state
+let dragState = {
+  active: false,
+  placeKey: null,
+  originalParent: null,
+  cloneEl: null,
+  offsetX: 0,
+  offsetY: 0,
+};
+
+// Helper: get pointer coordinates from mouse or touch event
+function getPoint(e) {
+  if (e.touches && e.touches.length > 0) {
+    return {
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY,
+    };
+  } else {
+    return {
+      x: e.clientX,
+      y: e.clientY,
+    };
+  }
+}
+
+// Start dragging a chip
+function startDrag(placeEl, e) {
+  e.preventDefault();
+
+  const rect = placeEl.getBoundingClientRect();
+  const point = getPoint(e);
+
+  dragState.active = true;
+  dragState.placeKey = placeEl.dataset.place;
+  dragState.originalParent = placeEl.parentElement;
+
+  // Create floating clone
+  const clone = placeEl.cloneNode(true);
+  clone.classList.add("dragging");
+  clone.style.position = "fixed";
+  clone.style.left = rect.left + "px";
+  clone.style.top = rect.top + "px";
+  clone.style.zIndex = 1000;
+  clone.style.pointerEvents = "none";
+  document.body.appendChild(clone);
+
+  dragState.cloneEl = clone;
+  dragState.offsetX = point.x - rect.left;
+  dragState.offsetY = point.y - rect.top;
+
+  // (Optionally) hide original; or we can keep it.
+  placeEl.style.opacity = "0.4";
+
+  // Add move/end listeners
+  window.addEventListener("mousemove", onPointerMove);
+  window.addEventListener("mouseup", onPointerUp);
+  window.addEventListener("touchmove", onPointerMove, { passive: false });
+  window.addEventListener("touchend", onPointerUp);
+}
+
+// Move the clone with pointer
+function onPointerMove(e) {
+  if (!dragState.active || !dragState.cloneEl) return;
+  e.preventDefault();
+
+  const point = getPoint(e);
+  const x = point.x - dragState.offsetX;
+  const y = point.y - dragState.offsetY;
+
+  dragState.cloneEl.style.left = x + "px";
+  dragState.cloneEl.style.top = y + "px";
+
+  // Highlight drop zones under pointer
+  highlightDropZones(point.x, point.y);
+}
+
+// End drag: drop into a zone if available
+function onPointerUp(e) {
+  if (!dragState.active) return;
+
+  const point = getPoint(e);
+  const dropZone = getDropZoneUnderPoint(point.x, point.y);
+
+  const originalParent = dragState.originalParent;
+  const placeKey = dragState.placeKey;
+
+  // Restore original chip
+  const originalChip = findChipElement(placeKey);
+  if (originalChip) {
+    originalChip.style.opacity = "1";
+  }
+
+  // Remove floating clone
+  if (dragState.cloneEl && dragState.cloneEl.parentElement) {
+    dragState.cloneEl.parentElement.removeChild(dragState.cloneEl);
+  }
+
+  // Clear highlight
+  clearDropZoneHighlight();
+
+  if (dropZone) {
+    // Put chip into this zone
+    moveChipToZone(placeKey, dropZone);
+  }
+
+  // Reset drag state
+  dragState = {
+    active: false,
+    placeKey: null,
+    originalParent: null,
+    cloneEl: null,
+    offsetX: 0,
+    offsetY: 0,
+  };
+
+  // Remove listeners
+  window.removeEventListener("mousemove", onPointerMove);
+  window.removeEventListener("mouseup", onPointerUp);
+  window.removeEventListener("touchmove", onPointerMove);
+  window.removeEventListener("touchend", onPointerUp);
+}
+
+// Find the drop zone under given viewport coordinates
+function getDropZoneUnderPoint(x, y) {
+  const dropZones = document.querySelectorAll(".drop-zone");
+  for (const zone of dropZones) {
+    const rect = zone.getBoundingClientRect();
+    if (
+      x >= rect.left &&
+      x <= rect.right &&
+      y >= rect.top &&
+      y <= rect.bottom
+    ) {
+      return zone;
+    }
+  }
+  return null;
+}
+
+// Highlight zones when dragging
+function highlightDropZones(x, y) {
+  const dropZones = document.querySelectorAll(".drop-zone");
+  dropZones.forEach((zone) => zone.classList.remove("highlight"));
+  const target = getDropZoneUnderPoint(x, y);
+  if (target) target.classList.add("highlight");
+}
+
+function clearDropZoneHighlight() {
+  const dropZones = document.querySelectorAll(".drop-zone");
+  dropZones.forEach((zone) => zone.classList.remove("highlight"));
+}
+
+// Find the original chip (in street or in list)
+function findChipElement(placeKey) {
+  return document.querySelector(`.place-chip[data-place="${placeKey}"]`);
+}
+
+// Move a place into a drop zone
+function moveChipToZone(placeKey, zoneEl) {
+  const zoneId = zoneEl.dataset.place;
+
+  // If another place is already in this zone, move it back to places list
+  for (const [z, pk] of Object.entries(placements)) {
+    if (z === zoneId && pk !== placeKey) {
+      const oldChip = findChipElement(pk);
+      if (oldChip) {
+        placesListEl.appendChild(oldChip);
+      }
+      delete placements[z];
+      break;
+    }
+  }
+
+  const chip = findChipElement(placeKey);
+  if (chip) {
+    zoneEl.appendChild(chip);
+  }
+  placements[zoneId] = placeKey;
+}
+
+// Set up drag handlers for all chips
+function initDraggable() {
+  const chips = document.querySelectorAll(".place-chip");
+
+  chips.forEach((chip) => {
+    chip.addEventListener("mousedown", (e) => startDrag(chip, e));
+    chip.addEventListener("touchstart", (e) => startDrag(chip, e), {
+      passive: false,
+    });
+  });
+}
+
+// Check answers
+function checkAnswers() {
+  const dropZones = document.querySelectorAll(".drop-zone");
+  let allFilled = true;
+  let allCorrect = true;
+
+  dropZones.forEach((zone) => {
+    const zoneId = zone.dataset.place;
+    const chip = zone.querySelector(".place-chip");
+
+    zone.classList.remove("correct", "wrong");
+
+    if (!chip) {
+      allFilled = false;
+      allCorrect = false;
+      return;
+    }
+
+    const placeKey = chip.dataset.place;
+    const expected = correctMapping[zoneId];
+
+    if (placeKey === expected) {
+      zone.classList.add("correct");
+    } else {
+      zone.classList.add("wrong");
+      allCorrect = false;
+    }
+  });
+
+  if (!allFilled) {
+    feedbackEl.textContent = "Some places are still not placed. Try to place all 6.";
+  } else if (allCorrect) {
+    feedbackEl.textContent = "Perfect! All places are in the correct spots.";
+  } else {
+    feedbackEl.textContent =
+      "Some places are in the wrong spots. Red borders show mistakes.";
+  }
+}
+
+// Reset everything
+function resetAll() {
+  // Clear placements
+  for (const key in placements) {
+    delete placements[key];
+  }
+
+  // Clear classes on zones
+  const dropZones = document.querySelectorAll(".drop-zone");
+  dropZones.forEach((zone) => {
+    zone.classList.remove("correct", "wrong", "highlight");
+  });
+
+  // Move all chips back to list
+  const chips = document.querySelectorAll(".place-chip");
+  chips.forEach((chip) => {
+    placesListEl.appendChild(chip);
+    chip.style.opacity = "1";
+  });
+
+  feedbackEl.textContent = "";
+}
+
+// Init
+initDraggable();
+resetBtn.addEventListener("click", resetAll);
+checkBtn.addEventListener("click", checkAnswers);            A3: '🛒 Supermarket',
             B1: '🍞 Bakery',
             B2: '🏪 Convenience Store',
             B3: '🏥 Hospital'
