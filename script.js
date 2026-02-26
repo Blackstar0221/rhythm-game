@@ -1,6 +1,6 @@
 // Game configuration
 const MAX_LEVEL = 10;
-const MAX_ROUNDS = 3; // changed to 3 rounds per level
+const MAX_ROUNDS = 3; // 3 rounds per level
 const MAX_HEARTS = 5;
 
 // Elements
@@ -27,31 +27,29 @@ let currentHintIndex = -1; // -1 = no hint shown this round yet
 let resultParts = []; // array of strings for step-by-step result
 let currentResultIndex = -1; // -1 = nothing shown yet
 
-// Vocabulary for hints
+// Vocabulary for hints (we'll make them match the simpler differences)
 const attributes = [
-  "slightly taller",
-  "a bit shorter",
-  "marginally wider",
-  "a tiny bit thinner",
-  "rotated a little",
-  "rotated the other way",
-  "moved up slightly",
-  "moved down slightly",
-  "shifted a little to the left",
-  "shifted a little to the right",
+  "clearly taller than the others",
+  "clearly shorter than the others",
+  "noticeably wider",
+  "noticeably thinner",
+  "rotated more than the others",
+  "tilted in the opposite direction",
+  "higher than the others",
+  "lower than the others",
+  "more to the left",
+  "more to the right",
 ];
 
 const logicalRelations = [
-  "not next to the center",
-  "not on an edge",
   "in the top row",
   "in the bottom row",
   "on the left side",
   "on the right side",
-  "closer to the top",
-  "closer to the bottom",
-  "closer to the left",
-  "closer to the right",
+  "closer to the top edge",
+  "closer to the bottom edge",
+  "closer to the left edge",
+  "closer to the right edge",
 ];
 
 // Utility
@@ -70,69 +68,82 @@ function renderHearts() {
   }
 }
 
-// Level difficulty config
-function getLevelDifficulty(level) {
-  // differenceScale: 1 (obvious) to 10 (very subtle)
-  const differenceScale = Math.min(10, 2 + level);
-  const hintComplexity = Math.min(10, 3 + level);
-  return { differenceScale, hintComplexity };
+// Decide what kind of difference this level uses
+// 1–3: height, 4–6: width, 7–8: rotation, 9–10: position
+function getLevelDifferenceType(level) {
+  if (level <= 3) return "height";
+  if (level <= 6) return "width";
+  if (level <= 8) return "rotation";
+  return "position";
 }
 
 // Generate the visual style for cards for this level
+// We now keep things simple and clear: one main difference only.
 function generateCardStyles(level) {
   const baseHeight = 120;
   const baseWidth = 100;
 
-  const { differenceScale } = getLevelDifficulty(level);
-
-  const normalVariation = Math.min(6, 2 + Math.floor(level / 2)); // px / degrees
-  const oddExtraVariation = 4 + differenceScale; // additional difference
+  const differenceType = getLevelDifferenceType(level);
 
   const cards = [];
 
+  // All cards start the same
   for (let i = 0; i < 6; i++) {
     const card = {
-      heightOffset: randInt(-normalVariation, normalVariation),
-      widthOffset: randInt(-normalVariation, normalVariation),
-      rotation: randInt(-normalVariation, normalVariation),
-      translateX: randInt(-normalVariation, normalVariation),
-      translateY: randInt(-normalVariation, normalVariation),
+      height: baseHeight,
+      width: baseWidth,
+      rotation: 0,
+      translateX: 0,
+      translateY: 0,
     };
     cards.push(card);
   }
 
   // Choose odd card index
   oddCardIndex = randInt(0, 5);
-
-  // Make the odd card more noticeably different
   const odd = cards[oddCardIndex];
-  const direction = Math.random() < 0.5 ? -1 : 1;
 
-  if (Math.random() < 0.5) {
-    // Taller / shorter
-    odd.heightOffset += direction * oddExtraVariation;
-  } else {
-    // Wider / thinner
-    odd.widthOffset += direction * oddExtraVariation;
+  // How big should the difference be?
+  // Early levels: very big difference; later: still obvious but a bit smaller.
+  let diffBig = 24; // px or deg
+  let diffSmall = 16;
+
+  if (level >= 4 && level <= 6) {
+    diffBig = 20;
+    diffSmall = 14;
+  } else if (level >= 7 && level <= 8) {
+    diffBig = 18;
+    diffSmall = 12;
+  } else if (level >= 9) {
+    diffBig = 16;
+    diffSmall = 10;
   }
 
-  if (level >= 4) {
-    // Add some rotation difference for higher levels
-    odd.rotation += direction * (oddExtraVariation - 2);
+  const sign = Math.random() < 0.5 ? -1 : 1;
+
+  if (differenceType === "height") {
+    // All normal cards: base height
+    // Odd card: clearly taller or shorter
+    odd.height = baseHeight + sign * diffBig;
+  } else if (differenceType === "width") {
+    odd.width = baseWidth + sign * diffBig;
+  } else if (differenceType === "rotation") {
+    // All normal: maybe tiny tilt
+    cards.forEach((c, i) => {
+      if (i !== oddCardIndex) {
+        c.rotation = randInt(-3, 3); // tiny random tilt
+      }
+    });
+    odd.rotation = sign * (12 + diffSmall); // clearly tilted
+  } else if (differenceType === "position") {
+    // Position difference: move the odd card clearly up/down/left/right
+    const axis = Math.random() < 0.5 ? "y" : "x";
+    if (axis === "y") {
+      odd.translateY = sign * -diffBig; // up or down
+    } else {
+      odd.translateX = sign * diffBig; // left or right
+    }
   }
-
-  // Clip to reasonable limits so they still look like cards
-  cards.forEach((card) => {
-    card.heightOffset = Math.max(-20, Math.min(20, card.heightOffset));
-    card.widthOffset = Math.max(-20, Math.min(20, card.widthOffset));
-    card.rotation = Math.max(-20, Math.min(20, card.rotation));
-  });
-
-  // Compute final values
-  cards.forEach((card) => {
-    card.height = baseHeight + card.heightOffset;
-    card.width = baseWidth + card.widthOffset;
-  });
 
   return cards;
 }
@@ -140,9 +151,20 @@ function generateCardStyles(level) {
 // Generate a hint text for this level and this layout
 // hintNumber: 0 = first hint, 1 = second hint, 2+ = stronger hints
 function generateHint(level, hintNumber = 0) {
-  const { hintComplexity } = getLevelDifficulty(level);
-
+  const differenceType = getLevelDifferenceType(level);
   const cardLabel = String.fromCharCode(65 + oddCardIndex); // 'A'..'F'
+
+  // Tailor hints to the actual difference type so they feel fair
+  let typeHint;
+  if (differenceType === "height") {
+    typeHint = "Focus on which card is the tallest or the shortest.";
+  } else if (differenceType === "width") {
+    typeHint = "Focus on which card is the widest or the thinnest.";
+  } else if (differenceType === "rotation") {
+    typeHint = "Look for the card that is tilted the most.";
+  } else {
+    typeHint = "Pay attention to which card is higher, lower, or more to one side.";
+  }
 
   const attributeHint = `The odd card is ${attributes[randInt(
     0,
@@ -154,25 +176,16 @@ function generateHint(level, hintNumber = 0) {
     ".";
   const directHint = `The odd card is labeled ${cardLabel}.`;
 
-  if (level <= 2) {
-    if (hintNumber === 0) return attributeHint;
-    if (hintNumber === 1) return attributeHint + " " + relationHint;
-    return directHint; // eventually just tell them
-  } else if (level <= 5) {
-    if (hintNumber === 0) return attributeHint;
-    if (hintNumber === 1) return relationHint;
+  // Simple progression of clarity
+  if (hintNumber === 0) {
+    return typeHint;
+  } else if (hintNumber === 1) {
+    return typeHint + " " + attributeHint;
+  } else if (hintNumber === 2) {
     return attributeHint + " " + relationHint;
-  } else if (level <= 8) {
-    if (hintNumber === 0) return relationHint;
-    if (hintNumber === 1) return attributeHint;
-    return `${attributeHint} Also, it is ${logicalRelations[
-      randInt(0, logicalRelations.length - 1)
-    ]}.`;
   } else {
-    // Harder levels start more vague
-    if (hintNumber === 0) return relationHint;
-    if (hintNumber === 1) return attributeHint;
-    return `${relationHint} Also, pay attention to how its size or angle feels different.`;
+    // Final strong hint basically gives it away
+    return directHint + " " + attributeHint;
   }
 }
 
@@ -190,7 +203,7 @@ function buildResultParts({ correct, guessedIndex }) {
     parts.push(`You chose ${guessedLabel}. That was not the odd one.`);
     parts.push(`The odd card was ${oddLabel}.`);
     parts.push(
-      "Look carefully at size, rotation, and position next time."
+      "Everyone looking at this layout would agree that card stands out the most."
     );
   }
 
@@ -233,6 +246,7 @@ function renderCards() {
     cardEl.dataset.index = i;
 
     const style = cardStyles[i];
+
     cardEl.style.height = `${style.height}px`;
     cardEl.style.width = `${style.width}px`;
 
