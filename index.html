@@ -2,138 +2,52 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <title>Beat Tap – Rhythm Challenge</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Places on the Street</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div id="game-container">
-    <header>
-      <h1>Places on the Street</h1>
-      <p class="subtitle">Use the clues to find the right place on Street A or Street B.</p>
-      <div id="status-bar">
-        <div>Level: <span id="level-display">1</span>/10</div>
-        <div>Lives: <span id="lives-display">3</span></div>
+  <div class="game-container">
+    <header class="top-bar">
+      <div class="title">Beat Tap</div>
+      <div class="stats">
+        <div>Score: <span id="score">0</span></div>
+        <div>Combo: <span id="combo">0</span></div>
+        <div>Best: <span id="best-combo">0</span></div>
       </div>
     </header>
 
-    <main>
-      <section id="streets-section">
-        <div class="street" id="street-a">
-          <h2>Street A</h2>
-          <div class="places-row">
-            <button class="place" data-street="A" data-index="0"></button>
-            <button class="place" data-street="A" data-index="1"></button>
-            <button class="place" data-street="A" data-index="2"></button>
-          </div>
+    <main class="main-area">
+      <section class="lanes">
+        <div class="lane" data-lane="0">
+          <div class="lane-label">A</div>
         </div>
-
-        <div class="street" id="street-b">
-          <h2>Street B</h2>
-          <div class="places-row">
-            <button class="place" data-street="B" data-index="3"></button>
-            <button class="place" data-street="B" data-index="4"></button>
-            <button class="place" data-street="B" data-index="5"></button>
-          </div>
+        <div class="lane" data-lane="1">
+          <div class="lane-label">S</div>
         </div>
+        <div class="lane" data-lane="2">
+          <div class="lane-label">D</div>
+        </div>
+        <div class="hit-line"></div>
       </section>
 
-      <section id="info-section">
-        <h2>Clues</h2>
-        <ul id="clues-list"></ul>
-        <div id="message"></div>
-        <button id="next-level-btn" class="hidden">Next Level</button>
-        <button id="restart-btn" class="hidden">Restart from Level 1</button>
-      </section>
-    </main>
+      <section class="side-panel">
+        <p class="instructions">
+          Press <b>A</b>, <b>S</b>, <b>D</b> when notes reach the hit line.
+        </p>
+        <p class="instructions small">
+          Timing windows:<br />
+          Perfect: ±0.12s, Good: ±0.20s
+        </p>
 
-    <footer>
-      <p>Practice logic, reading, and math skills.</p>
-    </footer>
-  </div>
+        <button id="start-btn" class="primary-btn">Start</button>
+        <button id="restart-btn" class="secondary-btn" disabled>Restart</button>
 
-  <script src="script.js"></script>
-</body>
-</html>
-          <div class="place-chip" data-place="hamburger">Hamburger Store</div>
-          <div class="place-chip" data-place="hospital">Hospital</div>
-        </div>
-
-        <button id="check-btn" class="primary-btn">Check</button>
-        <button id="reset-btn" class="secondary-btn">Reset</button>
-
-        <div id="feedback" class="feedback"></div>
+        <div id="hit-feedback" class="hit-feedback">Ready</div>
       </section>
     </main>
   </div>
 
   <script src="script.js"></script>
-</body>
-</html>                                <span class="position-label">B3</span>
-                                <div class="store-slot" id="B3"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Available Stores Section -->
-            <section class="stores-section">
-                <h3>Drag Stores to Place Them</h3>
-                <div class="available-stores" id="availableStores">
-                    <!-- Stores will be generated here -->
-                </div>
-            </section>
-
-            <!-- Clues Section -->
-            <section class="clues-section">
-                <h3>Clues 🔍</h3>
-                <div class="clues-list" id="cluesList">
-                    <!-- Clues will be generated here -->
-                </div>
-            </section>
-
-            <!-- Question Section -->
-            <section class="question-section">
-                <div class="question-box">
-                    <h3>Question:</h3>
-                    <p id="questionText">Question will appear here</p>
-                    <div class="answer-options" id="answerOptions">
-                        <!-- Answer options will be generated here -->
-                    </div>
-                </div>
-            </section>
-
-            <!-- Controls Section -->
-            <section class="controls-section">
-                <button id="submitBtn" class="btn btn-submit">Submit Answer</button>
-                <button id="hintBtn" class="btn btn-hint">Get Hint</button>
-                <button id="resetBtn" class="btn btn-reset">Reset Board</button>
-            </section>
-        </main>
-
-        <!-- Feedback Message -->
-        <div id="feedbackMessage" class="feedback-message hidden"></div>
-
-        <!-- Game Over Modal -->
-        <div id="gameOverModal" class="modal hidden">
-            <div class="modal-content">
-                <h2 id="gameOverTitle">Game Over!</h2>
-                <p id="gameOverMessage">Final Score: <span id="finalScore">0</span></p>
-                <button id="restartBtn" class="btn btn-submit">Play Again</button>
-            </div>
-        </div>
-
-        <!-- Victory Modal -->
-        <div id="victoryModal" class="modal hidden">
-            <div class="modal-content">
-                <h2>🎉 Level Complete!</h2>
-                <p>Your Score: <span id="levelScore">0</span></p>
-                <button id="nextLevelBtn" class="btn btn-submit">Next Level</button>
-            </div>
-        </div>
-    </div>
-
-    <script src="script.js"></script>
 </body>
 </html>
