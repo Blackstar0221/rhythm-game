@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rhythm Superstore - 라라의 알바</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <!-- Nickname Screen -->
+        <div id="nickname-screen">
+            <div class="nickname-bg">
+                <h1>Rhythm Superstore</h1>
+                <h2>라라의 알바</h2>
+                <p class="sub-title">닉네임을 입력하세요</p>
+                <div class="nickname-input-wrap">
+                    <input type="text" id="nickname-input" maxlength="10" placeholder="닉네임 (최대 10자)" autocomplete="off">
+                </div>
+                <button id="nickname-confirm-btn" class="nickname-btn">확인</button>
+            </div>
+        </div>
+
+        <!-- Title Screen -->
+        <div id="title-screen" style="display:none;">
+            <div class="title-bg">
+                <h1>Rhythm Superstore</h1>
+                <h2>라라의 알바</h2>
+                <p id="welcome-msg" class="welcome-msg"></p>
+                <p class="sub-title">리듬을 듣고 따라하세요!</p>
+                <p class="instruction">스페이스바를 눌러 시작!</p>
+                <div class="level-select">
+                    <button class="level-btn selected" data-level="easy">쉬움</button>
+                    <button class="level-btn" data-level="normal">보통</button>
+                    <button class="level-btn" data-level="hard">어려움</button>
+                </div>
+                <button id="ranking-btn" class="ranking-btn">랭킹 보기</button>
+            </div>
+        </div>
+
+        <!-- Ranking Screen -->
+        <div id="ranking-screen" style="display:none;">
+            <div class="ranking-content">
+                <h1>랭킹</h1>
+                <div class="ranking-tabs">
+                    <button class="ranking-tab selected" data-level="easy">쉬움</button>
+                    <button class="ranking-tab" data-level="normal">보통</button>
+                    <button class="ranking-tab" data-level="hard">어려움</button>
+                </div>
+                <div id="ranking-list" class="ranking-list"></div>
+                <button id="ranking-back-btn" class="ranking-btn">돌아가기</button>
+            </div>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="game-screen" style="display:none;">
+            <!-- HUD -->
+            <div id="hud">
+                <div id="score-display">
+                    <span class="label">점수</span>
+                    <span id="score">0</span>
+                </div>
+                <div id="round-display"></div>
+                <div id="combo-display">
+                    <span id="combo">0</span>
+                    <span class="label">콤보</span>
+                </div>
+            </div>
+
+            <!-- Customer at top -->
+            <div id="customer-area">
+                <div id="customer-sprite"></div>
+                <div id="customer-bubble"></div>
+            </div>
+
+            <!-- Falling Area -->
+            <div id="fall-area">
+                <!-- Items fall here -->
+                <div id="falling-items"></div>
+
+                <!-- Hit Zone line at bottom -->
+                <div id="hit-zone">
+                    <div id="hit-line"></div>
+                    <div id="hit-glow"></div>
+                </div>
+
+                <!-- Lala at the bottom -->
+                <div id="lala-bottom">
+                    <div id="lala-character">
+                        <div class="lala-hat"></div>
+                        <div class="lala-head">
+                            <div class="lala-hair"></div>
+                            <div class="lala-face">
+                                <div class="lala-eye left"></div>
+                                <div class="lala-eye right"></div>
+                                <div class="lala-mouth"></div>
+                            </div>
+                        </div>
+                        <div class="lala-body">
+                            <div class="lala-apron"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Phase Label -->
+            <div id="phase-label"></div>
+
+            <!-- Rating popup -->
+            <div id="rating-display">
+                <span id="rating"></span>
+            </div>
+
+            <!-- Progress Bar -->
+            <div id="progress-bar">
+                <div id="progress-fill"></div>
+            </div>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="result-screen" style="display:none;">
+            <div class="result-content">
+                <h1>알바 끝!</h1>
+                <div class="result-stats">
+                    <div class="stat">
+                        <span class="stat-label">점수</span>
+                        <span class="stat-value" id="final-score">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">최대 콤보</span>
+                        <span class="stat-value" id="final-combo">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Perfect</span>
+                        <span class="stat-value" id="final-perfect">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Good</span>
+                        <span class="stat-value" id="final-good">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Miss</span>
+                        <span class="stat-value" id="final-miss">0</span>
+                    </div>
+                </div>
+                <div class="result-grade" id="result-grade">S</div>
+                <p class="instruction">스페이스바를 눌러 다시 시작!</p>
+            </div>
+        </div>
+
+        <!-- Feedback overlay -->
+        <div id="feedback-overlay"></div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
