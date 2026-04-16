@@ -70,9 +70,10 @@ function getPatterns(level) {
     return level === 'easy' ? easy : level === 'normal' ? normal : hard;
 }
 
-// ========== DEVICE & NICKNAME & RANKING ==========
+// ========== DEVICE & AUTH & RANKING ==========
 const STORAGE_KEY_DEVICE = 'rhythm_superstore_device';
-const STORAGE_KEY_NICK = 'rhythm_superstore_nickname';
+const STORAGE_KEY_ACCOUNTS = 'rhythm_superstore_accounts';
+const STORAGE_KEY_AUTOLOGIN = 'rhythm_superstore_autologin';
 const STORAGE_KEY_RANKING = 'rhythm_superstore_ranking';
 
 function getSavedDevice() {
@@ -83,12 +84,26 @@ function saveDevice(type) {
     localStorage.setItem(STORAGE_KEY_DEVICE, type);
 }
 
-function getSavedNickname() {
-    return localStorage.getItem(STORAGE_KEY_NICK) || '';
+function getAccounts() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY_ACCOUNTS)) || {}; }
+    catch { return {}; }
 }
 
-function saveNickname(name) {
-    localStorage.setItem(STORAGE_KEY_NICK, name);
+function saveAccounts(accounts) {
+    localStorage.setItem(STORAGE_KEY_ACCOUNTS, JSON.stringify(accounts));
+}
+
+function getAutoLogin() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY_AUTOLOGIN)) || null; }
+    catch { return null; }
+}
+
+function saveAutoLogin(id, password) {
+    localStorage.setItem(STORAGE_KEY_AUTOLOGIN, JSON.stringify({ id, password }));
+}
+
+function clearAutoLogin() {
+    localStorage.removeItem(STORAGE_KEY_AUTOLOGIN);
 }
 
 function getRanking() {
@@ -175,13 +190,19 @@ const game = {
         if (savedDevice) {
             this.deviceType = savedDevice;
             this.applyDeviceMode();
-            // Check for saved nickname
-            const saved = getSavedNickname();
-            if (saved) {
-                this.nickname = saved;
-                this.showTitleScreen();
+            // Try auto-login
+            const auto = getAutoLogin();
+            if (auto) {
+                const accounts = getAccounts();
+                if (accounts[auto.id] && accounts[auto.id].password === auto.password) {
+                    this.nickname = auto.id;
+                    this.showTitleScreen();
+                } else {
+                    clearAutoLogin();
+                    this.showAuthScreen();
+                }
             } else {
-                this.showNicknameScreen();
+                this.showAuthScreen();
             }
         }
 
@@ -190,11 +211,23 @@ const game = {
             btn.addEventListener('click', () => this.selectDevice(btn.dataset.device));
         });
 
-        // Nickname confirm
-        document.getElementById('nickname-confirm-btn').addEventListener('click', () => this.confirmNickname());
-        document.getElementById('nickname-input').addEventListener('keydown', e => {
-            if (e.key === 'Enter') this.confirmNickname();
+        // Auth: login
+        document.getElementById('login-btn').addEventListener('click', () => this.doLogin());
+        document.getElementById('login-pw').addEventListener('keydown', e => {
+            if (e.key === 'Enter') this.doLogin();
         });
+
+        // Auth: goto signup
+        document.getElementById('goto-signup-btn').addEventListener('click', () => this.showSignupForm());
+
+        // Auth: signup
+        document.getElementById('signup-btn').addEventListener('click', () => this.doSignup());
+        document.getElementById('signup-pw-confirm').addEventListener('keydown', e => {
+            if (e.key === 'Enter') this.doSignup();
+        });
+
+        // Auth: goto login
+        document.getElementById('goto-login-btn').addEventListener('click', () => this.showLoginForm());
 
         // Ranking button
         document.getElementById('ranking-btn').addEventListener('click', () => this.showRanking());
@@ -226,7 +259,6 @@ const game = {
         // Touch input for mobile mode - title screen
         document.getElementById('title-screen').addEventListener('touchstart', e => {
             if (this.deviceType !== 'mobile') return;
-            // Don't intercept button taps
             if (e.target.closest('.level-btn') || e.target.closest('.ranking-btn')) return;
             e.preventDefault();
             this.input();
@@ -256,7 +288,18 @@ const game = {
         this.deviceType = type;
         saveDevice(type);
         this.applyDeviceMode();
-        this.showNicknameScreen();
+        // Try auto-login
+        const auto = getAutoLogin();
+        if (auto) {
+            const accounts = getAccounts();
+            if (accounts[auto.id] && accounts[auto.id].password === auto.password) {
+                this.nickname = auto.id;
+                this.showTitleScreen();
+                return;
+            }
+            clearAutoLogin();
+        }
+        this.showAuthScreen();
     },
 
     applyDeviceMode() {
@@ -267,11 +310,73 @@ const game = {
         }
     },
 
-    showNicknameScreen() {
-        this.state = 'nickname';
+    showAuthScreen() {
+        this.state = 'auth';
         document.getElementById('device-screen').style.display = 'none';
-        document.getElementById('nickname-screen').style.display = 'flex';
-        document.getElementById('nickname-input').focus();
+        document.getElementById('auth-screen').style.display = 'flex';
+        this.showLoginForm();
+    },
+
+    showLoginForm() {
+        document.getElementById('login-form').style.display = 'block';
+        document.getElementById('signup-form').style.display = 'none';
+        document.getElementById('login-error').textContent = '';
+        document.getElementById('login-id').value = '';
+        document.getElementById('login-pw').value = '';
+        document.getElementById('login-id').focus();
+    },
+
+    showSignupForm() {
+        document.getElementById('login-form').style.display = 'none';
+        document.getElementById('signup-form').style.display = 'block';
+        document.getElementById('signup-error').textContent = '';
+        document.getElementById('signup-id').value = '';
+        document.getElementById('signup-pw').value = '';
+        document.getElementById('signup-pw-confirm').value = '';
+        document.getElementById('signup-id').focus();
+    },
+
+    doLogin() {
+        const id = document.getElementById('login-id').value.trim();
+        const pw = document.getElementById('login-pw').value;
+        const errorEl = document.getElementById('login-error');
+
+        if (!id || !pw) { errorEl.textContent = '아이디와 비밀번호를 입력하세요.'; return; }
+
+        const accounts = getAccounts();
+        if (!accounts[id]) { errorEl.textContent = '존재하지 않는 아이디입니다.'; return; }
+        if (accounts[id].password !== pw) { errorEl.textContent = '비밀번호가 틀렸습니다.'; return; }
+
+        this.nickname = id;
+
+        if (document.getElementById('autologin-check').checked) {
+            saveAutoLogin(id, pw);
+        } else {
+            clearAutoLogin();
+        }
+
+        this.showTitleScreen();
+    },
+
+    doSignup() {
+        const id = document.getElementById('signup-id').value.trim();
+        const pw = document.getElementById('signup-pw').value;
+        const pwConfirm = document.getElementById('signup-pw-confirm').value;
+        const errorEl = document.getElementById('signup-error');
+
+        if (!id || id.length < 2) { errorEl.textContent = '아이디는 2자 이상이어야 합니다.'; return; }
+        if (pw.length < 4) { errorEl.textContent = '비밀번호는 4자 이상이어야 합니다.'; return; }
+        if (pw !== pwConfirm) { errorEl.textContent = '비밀번호가 일치하지 않습니다.'; return; }
+
+        const accounts = getAccounts();
+        if (accounts[id]) { errorEl.textContent = '이미 사용 중인 아이디입니다.'; return; }
+
+        accounts[id] = { password: pw };
+        saveAccounts(accounts);
+
+        this.nickname = id;
+        saveAutoLogin(id, pw);
+        this.showTitleScreen();
     },
 
     updateInstructions() {
@@ -282,19 +387,10 @@ const game = {
         if (resultEl) resultEl.textContent = isMobile ? '화면을 터치해 다시 시작!' : '스페이스바를 눌러 다시 시작!';
     },
 
-    confirmNickname() {
-        const input = document.getElementById('nickname-input');
-        const name = input.value.trim();
-        if (!name) { input.focus(); return; }
-        this.nickname = name;
-        saveNickname(name);
-        this.showTitleScreen();
-    },
-
     showTitleScreen() {
         this.state = 'title';
         document.getElementById('device-screen').style.display = 'none';
-        document.getElementById('nickname-screen').style.display = 'none';
+        document.getElementById('auth-screen').style.display = 'none';
         document.getElementById('ranking-screen').style.display = 'none';
         document.getElementById('result-screen').style.display = 'none';
         document.getElementById('game-screen').style.display = 'none';

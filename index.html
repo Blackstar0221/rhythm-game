@@ -29,16 +29,51 @@
             </div>
         </div>
 
-        <!-- Nickname Screen -->
-        <div id="nickname-screen" style="display:none;">
-            <div class="nickname-bg">
+        <!-- Auth Screen -->
+        <div id="auth-screen" style="display:none;">
+            <div class="auth-bg">
                 <h1>Rhythm Superstore</h1>
                 <h2>라라의 알바</h2>
-                <p class="sub-title">닉네임을 입력하세요</p>
-                <div class="nickname-input-wrap">
-                    <input type="text" id="nickname-input" maxlength="10" placeholder="닉네임 (최대 10자)" autocomplete="off">
+
+                <!-- Login Form -->
+                <div id="login-form">
+                    <p class="sub-title">로그인</p>
+                    <div class="auth-input-wrap">
+                        <input type="text" id="login-id" maxlength="20" placeholder="아이디" autocomplete="username">
+                    </div>
+                    <div class="auth-input-wrap">
+                        <input type="password" id="login-pw" maxlength="30" placeholder="비밀번호" autocomplete="current-password">
+                    </div>
+                    <div class="auth-autologin">
+                        <label class="toggle-label">
+                            <span>자동 로그인</span>
+                            <div class="toggle-switch">
+                                <input type="checkbox" id="autologin-check">
+                                <span class="toggle-slider"></span>
+                            </div>
+                        </label>
+                    </div>
+                    <p id="login-error" class="auth-error"></p>
+                    <button id="login-btn" class="auth-btn primary">로그인</button>
+                    <button id="goto-signup-btn" class="auth-btn link">새로운 계정 만들기</button>
                 </div>
-                <button id="nickname-confirm-btn" class="nickname-btn">확인</button>
+
+                <!-- Signup Form -->
+                <div id="signup-form" style="display:none;">
+                    <p class="sub-title">새 계정 만들기</p>
+                    <div class="auth-input-wrap">
+                        <input type="text" id="signup-id" maxlength="20" placeholder="아이디 (2~20자)" autocomplete="off">
+                    </div>
+                    <div class="auth-input-wrap">
+                        <input type="password" id="signup-pw" maxlength="30" placeholder="비밀번호 (4자 이상)" autocomplete="new-password">
+                    </div>
+                    <div class="auth-input-wrap">
+                        <input type="password" id="signup-pw-confirm" maxlength="30" placeholder="비밀번호 확인" autocomplete="new-password">
+                    </div>
+                    <p id="signup-error" class="auth-error"></p>
+                    <button id="signup-btn" class="auth-btn primary">가입하기</button>
+                    <button id="goto-login-btn" class="auth-btn link">로그인으로 돌아가기</button>
+                </div>
             </div>
         </div>
 
