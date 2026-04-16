@@ -70,9 +70,18 @@ function getPatterns(level) {
     return level === 'easy' ? easy : level === 'normal' ? normal : hard;
 }
 
-// ========== NICKNAME & RANKING ==========
+// ========== DEVICE & NICKNAME & RANKING ==========
+const STORAGE_KEY_DEVICE = 'rhythm_superstore_device';
 const STORAGE_KEY_NICK = 'rhythm_superstore_nickname';
 const STORAGE_KEY_RANKING = 'rhythm_superstore_ranking';
+
+function getSavedDevice() {
+    return localStorage.getItem(STORAGE_KEY_DEVICE) || '';
+}
+
+function saveDevice(type) {
+    localStorage.setItem(STORAGE_KEY_DEVICE, type);
+}
 
 function getSavedNickname() {
     return localStorage.getItem(STORAGE_KEY_NICK) || '';
@@ -134,11 +143,12 @@ function escapeHtml(str) {
 
 // ========== GAME ==========
 const game = {
-    state: 'nickname', // starts at nickname screen
+    state: 'device', // starts at device screen
     phase: 'idle',
     level: 'easy',
     audio: new Audio(),
     nickname: '',
+    deviceType: '', // 'mobile' or 'pc'
 
     round: 0,
     totalRounds: 8,
@@ -160,12 +170,25 @@ const game = {
     hitLineY: 0,
 
     init() {
-        // Check for saved nickname
-        const saved = getSavedNickname();
-        if (saved) {
-            this.nickname = saved;
-            this.showTitleScreen();
+        // Check for saved device type
+        const savedDevice = getSavedDevice();
+        if (savedDevice) {
+            this.deviceType = savedDevice;
+            this.applyDeviceMode();
+            // Check for saved nickname
+            const saved = getSavedNickname();
+            if (saved) {
+                this.nickname = saved;
+                this.showTitleScreen();
+            } else {
+                this.showNicknameScreen();
+            }
         }
+
+        // Device selection buttons
+        document.querySelectorAll('.device-btn').forEach(btn => {
+            btn.addEventListener('click', () => this.selectDevice(btn.dataset.device));
+        });
 
         // Nickname confirm
         document.getElementById('nickname-confirm-btn').addEventListener('click', () => this.confirmNickname());
@@ -195,13 +218,68 @@ const game = {
             });
         });
 
+        // Keyboard input (PC mode)
         document.addEventListener('keydown', e => {
             if (e.code === 'Space') { e.preventDefault(); this.input(); }
         });
 
-        document.getElementById('fall-area')?.addEventListener('click', () => {
+        // Touch input for mobile mode - title screen
+        document.getElementById('title-screen').addEventListener('touchstart', e => {
+            if (this.deviceType !== 'mobile') return;
+            // Don't intercept button taps
+            if (e.target.closest('.level-btn') || e.target.closest('.ranking-btn')) return;
+            e.preventDefault();
+            this.input();
+        }, { passive: false });
+
+        // Touch input for mobile mode - game play area
+        document.getElementById('fall-area').addEventListener('touchstart', e => {
+            if (this.deviceType !== 'mobile') return;
+            e.preventDefault();
+            if (this.state === 'playing' && this.phase === 'play') this.tap();
+        }, { passive: false });
+
+        // Touch input for mobile mode - result screen
+        document.getElementById('result-screen').addEventListener('touchstart', e => {
+            if (this.deviceType !== 'mobile') return;
+            e.preventDefault();
+            this.input();
+        }, { passive: false });
+
+        // Click input for fall-area (PC fallback)
+        document.getElementById('fall-area').addEventListener('click', () => {
             if (this.state === 'playing' && this.phase === 'play') this.tap();
         });
+    },
+
+    selectDevice(type) {
+        this.deviceType = type;
+        saveDevice(type);
+        this.applyDeviceMode();
+        this.showNicknameScreen();
+    },
+
+    applyDeviceMode() {
+        if (this.deviceType === 'mobile') {
+            document.body.classList.add('mobile-mode');
+        } else {
+            document.body.classList.remove('mobile-mode');
+        }
+    },
+
+    showNicknameScreen() {
+        this.state = 'nickname';
+        document.getElementById('device-screen').style.display = 'none';
+        document.getElementById('nickname-screen').style.display = 'flex';
+        document.getElementById('nickname-input').focus();
+    },
+
+    updateInstructions() {
+        const isMobile = this.deviceType === 'mobile';
+        const startEl = document.getElementById('start-instruction');
+        const resultEl = document.getElementById('result-instruction');
+        if (startEl) startEl.textContent = isMobile ? '화면을 터치해 시작!' : '스페이스바를 눌러 시작!';
+        if (resultEl) resultEl.textContent = isMobile ? '화면을 터치해 다시 시작!' : '스페이스바를 눌러 다시 시작!';
     },
 
     confirmNickname() {
@@ -215,12 +293,14 @@ const game = {
 
     showTitleScreen() {
         this.state = 'title';
+        document.getElementById('device-screen').style.display = 'none';
         document.getElementById('nickname-screen').style.display = 'none';
         document.getElementById('ranking-screen').style.display = 'none';
         document.getElementById('result-screen').style.display = 'none';
         document.getElementById('game-screen').style.display = 'none';
         document.getElementById('title-screen').style.display = 'flex';
         document.getElementById('welcome-msg').textContent = `${this.nickname} 님, 환영합니다!`;
+        this.updateInstructions();
     },
 
     showRanking() {
@@ -648,6 +728,8 @@ const game = {
 
         // Save to ranking
         saveRankingEntry(this.level, this.nickname, this.score, grade);
+
+        this.updateInstructions();
     },
 
     toTitle() {

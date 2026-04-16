@@ -8,8 +8,29 @@
 </head>
 <body>
     <div id="game-container">
+        <!-- Device Selection Screen -->
+        <div id="device-screen">
+            <div class="device-bg">
+                <h1>Rhythm Superstore</h1>
+                <h2>라라의 알바</h2>
+                <p class="sub-title">기기를 선택하세요</p>
+                <div class="device-select">
+                    <button class="device-btn" data-device="mobile">
+                        <span class="device-icon">📱</span>
+                        <span class="device-label">모바일 / 태블릿</span>
+                        <span class="device-desc">터치로 플레이</span>
+                    </button>
+                    <button class="device-btn" data-device="pc">
+                        <span class="device-icon">💻</span>
+                        <span class="device-label">컴퓨터 / 노트북</span>
+                        <span class="device-desc">스페이스바로 플레이</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- Nickname Screen -->
-        <div id="nickname-screen">
+        <div id="nickname-screen" style="display:none;">
             <div class="nickname-bg">
                 <h1>Rhythm Superstore</h1>
                 <h2>라라의 알바</h2>
@@ -28,7 +49,7 @@
                 <h2>라라의 알바</h2>
                 <p id="welcome-msg" class="welcome-msg"></p>
                 <p class="sub-title">리듬을 듣고 따라하세요!</p>
-                <p class="instruction">스페이스바를 눌러 시작!</p>
+                <p class="instruction" id="start-instruction">스페이스바를 눌러 시작!</p>
                 <div class="level-select">
                     <button class="level-btn selected" data-level="easy">쉬움</button>
                     <button class="level-btn" data-level="normal">보통</button>
@@ -144,7 +165,7 @@
                     </div>
                 </div>
                 <div class="result-grade" id="result-grade">S</div>
-                <p class="instruction">스페이스바를 눌러 다시 시작!</p>
+                <p class="instruction" id="result-instruction">스페이스바를 눌러 다시 시작!</p>
             </div>
         </div>
 
