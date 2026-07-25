@@ -1,10 +1,789 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rhythm Superstore - 라라의 알바</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rhythm Superstore - 라라의 알바</title>
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    font-family: 'Malgun Gothic', '맑은 고딕', sans-serif;
+    overflow: hidden;
+}
+
+#game-container {
+    width: 500px;
+    height: 700px;
+    position: relative;
+    overflow: hidden;
+    border-radius: 16px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e8e8e8;
+}
+
+/* ========== TITLE SCREEN ========== */
+#title-screen {
+    width: 100%;
+    height: 100%;
+    background: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    z-index: 100;
+}
+
+.title-bg {
+    text-align: center;
+}
+
+.title-bg h1 {
+    font-size: 42px;
+    color: #333;
+    text-shadow: none;
+    margin-bottom: 5px;
+}
+
+.title-bg h2 {
+    font-size: 28px;
+    color: #FFB347;
+    margin-bottom: 8px;
+}
+
+.title-bg .sub-title {
+    font-size: 16px;
+    color: #888;
+    margin-bottom: 40px;
+}
+
+.title-bg .instruction {
+    font-size: 20px;
+    color: #5577cc;
+    animation: blink 1.2s ease-in-out infinite;
+    margin-bottom: 25px;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+.level-select {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.level-btn {
+    font-family: inherit;
+    font-size: 16px;
+    padding: 10px 22px;
+    border: 2px solid #5577cc;
+    border-radius: 25px;
+    background: transparent;
+    color: #5577cc;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.level-btn.selected {
+    background: #5577cc;
+    color: white;
+    box-shadow: 0 0 10px rgba(85, 119, 204, 0.3);
+}
+
+.level-btn:hover {
+    transform: scale(1.08);
+}
+
+/* ========== GAME SCREEN ========== */
+#game-screen {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    background: #ffffff;
+}
+
+/* HUD */
+#hud {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 45px;
+    background: rgba(240,240,240,0.95);
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 18px;
+    z-index: 50;
+    color: #333;
+}
+
+#score-display, #combo-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.label {
+    font-size: 12px;
+    color: #999;
+}
+
+#score {
+    font-size: 24px;
+    color: #d4960a;
+    font-weight: bold;
+}
+
+#combo {
+    font-size: 24px;
+    color: #2da855;
+    font-weight: bold;
+    transition: transform 0.15s;
+}
+
+#round-display {
+    font-size: 14px;
+    color: #888;
+}
+
+/* ========== CUSTOMER AREA ========== */
+#customer-area {
+    position: absolute;
+    top: 48px;
+    right: 15px;
+    z-index: 55;
+    display: flex;
+    align-items: flex-start;
+    gap: 5px;
+}
+
+#customer-sprite {
+    width: 50px;
+    height: 60px;
+    font-size: 42px;
+    line-height: 60px;
+    text-align: center;
+    transition: transform 0.15s;
+}
+
+#customer-sprite.nod {
+    animation: customerNod 0.5s ease-in-out;
+}
+
+@keyframes customerNod {
+    0% { transform: translateY(0) rotate(0); }
+    25% { transform: translateY(4px) rotate(3deg); }
+    50% { transform: translateY(0) rotate(0); }
+    75% { transform: translateY(4px) rotate(-2deg); }
+    100% { transform: translateY(0) rotate(0); }
+}
+
+#customer-bubble {
+    position: absolute;
+    right: 55px;
+    top: 5px;
+    background: rgba(255, 255, 255, 0.95);
+    color: #333;
+    font-size: 14px;
+    font-weight: bold;
+    padding: 6px 14px;
+    border-radius: 15px;
+    white-space: nowrap;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    pointer-events: none;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+#customer-bubble::after {
+    content: '';
+    position: absolute;
+    right: -6px;
+    top: 10px;
+    width: 0;
+    height: 0;
+    border-left: 8px solid rgba(255, 255, 255, 0.95);
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+}
+
+#customer-bubble.show {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* ========== FALL AREA ========== */
+#fall-area {
+    position: absolute;
+    top: 45px;
+    left: 0;
+    right: 0;
+    bottom: 35px;
+    overflow: hidden;
+}
+
+/* Falling items */
+#falling-items {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10;
+}
+
+.falling-note {
+    position: absolute;
+    width: 72px;
+    height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    border-radius: 50%;
+    background: rgba(240, 245, 255, 0.9);
+    border: 3px solid rgba(100, 140, 220, 0.5);
+    z-index: 11;
+    transition: none;
+    pointer-events: none;
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.12));
+    box-shadow: 0 2px 12px rgba(100, 140, 220, 0.15);
+}
+
+.falling-note.listen-note {
+    background: rgba(255, 248, 230, 0.95);
+    border-color: rgba(230, 160, 50, 0.6);
+    filter: drop-shadow(0 2px 8px rgba(230, 160, 50, 0.25));
+    box-shadow: 0 2px 14px rgba(230, 160, 50, 0.2);
+}
+
+.falling-note.ghost-note {
+    opacity: 0.35;
+    filter: grayscale(0.3);
+    border: 3px dashed rgba(150, 150, 180, 0.35);
+    background: rgba(245, 245, 250, 0.5);
+    box-shadow: none;
+}
+
+.falling-note.hit-perfect {
+    opacity: 1 !important;
+    filter: none !important;
+    background: rgba(255, 245, 200, 0.95) !important;
+    border-color: #e6a800 !important;
+    box-shadow: 0 0 20px rgba(230, 168, 0, 0.4) !important;
+    animation: noteHitPerfect 0.5s ease-out forwards !important;
+}
+
+.falling-note.hit-good {
+    opacity: 1 !important;
+    filter: none !important;
+    background: rgba(220, 255, 235, 0.95) !important;
+    border-color: #33bb66 !important;
+    box-shadow: 0 0 15px rgba(51, 187, 102, 0.3) !important;
+    animation: noteHitGood 0.4s ease-out forwards !important;
+}
+
+.falling-note.hit-miss {
+    opacity: 0.4 !important;
+    border-color: #ee5555 !important;
+    background: rgba(255, 230, 230, 0.8) !important;
+    box-shadow: 0 0 10px rgba(238, 85, 85, 0.2) !important;
+    animation: noteHitMiss 0.5s ease-out forwards !important;
+}
+
+@keyframes noteHitPerfect {
+    0% { transform: scale(1); }
+    30% { transform: scale(1.6); opacity: 1; }
+    100% { transform: scale(2.2); opacity: 0; }
+}
+
+@keyframes noteHitGood {
+    0% { transform: scale(1); }
+    30% { transform: scale(1.4); opacity: 1; }
+    100% { transform: scale(1.8); opacity: 0; }
+}
+
+@keyframes noteHitMiss {
+    0% { transform: scale(1); opacity: 0.4; }
+    100% { transform: scale(0.4) translateY(40px); opacity: 0; }
+}
+
+@keyframes noteListen {
+    0% { transform: scale(0.3); opacity: 0; }
+    50% { transform: scale(1.15); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* Hit Zone */
+#hit-zone {
+    position: absolute;
+    bottom: 90px;
+    left: 0;
+    right: 0;
+    height: 4px;
+    z-index: 5;
+}
+
+#hit-line {
+    position: absolute;
+    left: 20px;
+    right: 20px;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, rgba(100, 100, 100, 0.5), transparent);
+    border-radius: 2px;
+}
+
+#hit-glow {
+    position: absolute;
+    left: 20px;
+    right: 20px;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, rgba(100, 100, 100, 0.3), transparent);
+    border-radius: 2px;
+    box-shadow: 0 0 8px rgba(100, 100, 100, 0.15);
+    transition: all 0.1s;
+}
+
+#hit-zone.active #hit-glow {
+    height: 6px;
+    box-shadow: 0 0 20px rgba(80, 200, 120, 0.5);
+    background: linear-gradient(90deg, transparent, rgba(80, 200, 120, 0.7), transparent);
+}
+
+#hit-zone.miss #hit-glow {
+    box-shadow: 0 0 20px rgba(255, 80, 80, 0.5);
+    background: linear-gradient(90deg, transparent, rgba(255, 80, 80, 0.7), transparent);
+}
+
+/* Lala at bottom */
+#lala-bottom {
+    position: absolute;
+    bottom: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+}
+
+#lala-character {
+    position: relative;
+    width: 70px;
+    height: 85px;
+}
+
+.lala-hat {
+    position: absolute;
+    top: 0;
+    left: 5px;
+    width: 55px;
+    height: 22px;
+    background: #3366cc;
+    border-radius: 50% 50% 10% 10%;
+    z-index: 3;
+}
+.lala-hat::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: -3px;
+    width: 61px;
+    height: 9px;
+    background: #2855b0;
+    border-radius: 4px;
+}
+
+.lala-head {
+    position: absolute;
+    top: 14px;
+    left: 3px;
+    width: 60px;
+    height: 55px;
+    z-index: 2;
+}
+
+.lala-hair {
+    position: absolute;
+    top: 8px;
+    left: -2px;
+    width: 64px;
+    height: 45px;
+    background: #2c2c2c;
+    border-radius: 32px 32px 15px 22px;
+    z-index: 1;
+}
+.lala-hair::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    right: -3px;
+    width: 14px;
+    height: 28px;
+    background: #2c2c2c;
+    border-radius: 0 0 7px 7px;
+}
+
+.lala-face {
+    position: absolute;
+    top: 12px;
+    left: 5px;
+    width: 50px;
+    height: 42px;
+    background: #FFECD2;
+    border-radius: 25px 25px 18px 18px;
+    z-index: 2;
+    border: 2px solid #333;
+}
+
+.lala-eye {
+    position: absolute;
+    width: 10px;
+    height: 12px;
+    background: #333;
+    border-radius: 50%;
+    top: 12px;
+}
+.lala-eye.left { left: 10px; }
+.lala-eye.right { right: 10px; }
+.lala-eye::after {
+    content: '';
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: white;
+    border-radius: 50%;
+    top: 2px;
+    left: 2px;
+}
+
+.lala-mouth {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 10px;
+    height: 5px;
+    border-bottom: 2px solid #333;
+    border-radius: 0 0 6px 6px;
+    transition: all 0.15s;
+}
+
+.lala-mouth.happy {
+    width: 14px;
+    height: 8px;
+    background: #ff6b6b;
+    border-bottom: none;
+    border-radius: 0 0 10px 10px;
+    border: 2px solid #333;
+    border-top: none;
+}
+
+.lala-body {
+    position: absolute;
+    top: 55px;
+    left: 2px;
+    width: 62px;
+    height: 28px;
+}
+
+.lala-apron {
+    width: 58px;
+    height: 26px;
+    background: #3366cc;
+    border-radius: 8px;
+    border: 2px solid #2855b0;
+}
+
+/* Lala bounce on tap */
+#lala-bottom.bounce {
+    animation: lalaBounce 0.15s ease-out;
+}
+
+@keyframes lalaBounce {
+    0% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(-8px); }
+    100% { transform: translateX(-50%) translateY(0); }
+}
+
+/* Phase Label */
+#phase-label {
+    position: absolute;
+    top: 45%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 32px;
+    font-weight: bold;
+    color: #444;
+    text-shadow: none;
+    pointer-events: none;
+    z-index: 60;
+    transition: opacity 0.3s;
+}
+
+/* Rating display */
+#rating-display {
+    position: absolute;
+    bottom: 120px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 55;
+    pointer-events: none;
+}
+
+#rating {
+    font-size: 28px;
+    font-weight: bold;
+    text-shadow: 0 0 15px currentColor;
+    transition: all 0.1s;
+}
+
+/* Progress Bar */
+#progress-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 35px;
+    background: rgba(240, 240, 240, 0.95);
+    border-top: 1px solid #e0e0e0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#progress-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, rgba(100, 140, 220, 0.2), rgba(80, 200, 120, 0.2));
+    transition: width 0.3s;
+}
+
+#progress-bar::after {
+    content: '스페이스바로 리듬을 따라하세요!';
+    position: relative;
+    z-index: 31;
+    color: rgba(0,0,0,0.3);
+    font-size: 13px;
+}
+
+body.mobile-mode #progress-bar::after {
+    content: '터치로 리듬을 따라하세요!';
+}
+
+/* ========== FEEDBACK ========== */
+#feedback-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 200;
+}
+
+.feedback-text {
+    position: absolute;
+    font-size: 30px;
+    font-weight: bold;
+    pointer-events: none;
+    animation: feedbackPop 0.5s ease-out forwards;
+    z-index: 201;
+    text-shadow: 0 0 15px currentColor;
+}
+
+.feedback-text.perfect { color: #d4960a; text-shadow: 0 1px 4px rgba(212,150,10,0.3); }
+.feedback-text.good { color: #2da855; text-shadow: 0 1px 4px rgba(45,168,85,0.3); }
+.feedback-text.miss { color: #dd4444; text-shadow: 0 1px 4px rgba(221,68,68,0.3); }
+
+@keyframes feedbackPop {
+    0% { transform: scale(0.5) translateY(0); opacity: 1; }
+    30% { transform: scale(1.2) translateY(-8px); opacity: 1; }
+    100% { transform: scale(1) translateY(-40px); opacity: 0; }
+}
+
+/* Subtle dot pattern on white background */
+#fall-area::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle, rgba(0,0,0,0.03) 1px, transparent 1px);
+    background-size: 24px 24px;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* ========== RESULT SCREEN ========== */
+#result-screen {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    z-index: 150;
+    background: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.result-content {
+    text-align: center;
+    color: #333;
+}
+
+.result-content h1 {
+    font-size: 44px;
+    margin-bottom: 25px;
+    text-shadow: none;
+}
+
+.result-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 25px;
+    max-width: 400px;
+}
+
+.stat {
+    background: rgba(0,0,0,0.03);
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #e0e0e0;
+}
+
+.stat-label {
+    display: block;
+    font-size: 12px;
+    color: #999;
+    margin-bottom: 4px;
+}
+
+.stat-value {
+    display: block;
+    font-size: 28px;
+    color: #FFD700;
+    font-weight: bold;
+}
+
+.result-grade {
+    font-size: 72px;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+.result-grade.S { color: #e6a800; }
+.result-grade.A { color: #33bb66; }
+.result-grade.B { color: #3399cc; }
+.result-grade.C { color: #dd8822; }
+.result-grade.D { color: #dd4444; }
+
+.result-content .instruction {
+    font-size: 18px;
+    color: rgba(0,0,0,0.35);
+    animation: blink 1.2s ease-in-out infinite;
+}
+
+/* ========== DEVICE SCREEN ========== */
+#device-screen {
+    width: 100%;
+    height: 100%;
+    background: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    z-index: 120;
+}
+
+.device-bg {
+    text-align: center;
+}
+
+.device-bg h1 {
+    font-size: 42px;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.device-bg h2 {
+    font-size: 28px;
+    color: #FFB347;
+    margin-bottom: 30px;
+}
+
+.device-bg .sub-title {
+    font-size: 16px;
+    color: #888;
+    margin-bottom: 30px;
+}
+
+.device-select {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+}
+
+.device-btn {
+    font-family: inherit;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 24px 28px;
+    border: 2px solid #ddd;
+    border-radius: 16px;
+    background: #fafafa;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 180px;
+}
+
+.device-btn:hover {
+    border-color: #5577cc;
+    background: #f0f4ff;
+    transform: translateY(-3px);
+    box-shadow: 0 4px 16px rgba(85, 119, 204, 0.2);
+}
+
+.device-btn:active {
+    transform: translateY(0);
+}
+
+.device-icon {
+    font-size: 48px;
+    line-height: 1;
+}
+
+.device-label {
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+}
+
+.device-desc {
+    font-size: 12px;
+    color: #999;
+}
+</style>
 </head>
 <body>
     <div id="game-container">
@@ -29,60 +808,11 @@
             </div>
         </div>
 
-        <!-- Auth Screen -->
-        <div id="auth-screen" style="display:none;">
-            <div class="auth-bg">
-                <h1>Rhythm Superstore</h1>
-                <h2>라라의 알바</h2>
-
-                <!-- Login Form -->
-                <div id="login-form">
-                    <p class="sub-title">로그인</p>
-                    <div class="auth-input-wrap">
-                        <input type="text" id="login-id" maxlength="20" placeholder="아이디" autocomplete="username">
-                    </div>
-                    <div class="auth-input-wrap">
-                        <input type="password" id="login-pw" maxlength="30" placeholder="비밀번호" autocomplete="current-password">
-                    </div>
-                    <div class="auth-autologin">
-                        <label class="toggle-label">
-                            <span>자동 로그인</span>
-                            <div class="toggle-switch">
-                                <input type="checkbox" id="autologin-check">
-                                <span class="toggle-slider"></span>
-                            </div>
-                        </label>
-                    </div>
-                    <p id="login-error" class="auth-error"></p>
-                    <button id="login-btn" class="auth-btn primary">로그인</button>
-                    <button id="goto-signup-btn" class="auth-btn link">새로운 계정 만들기</button>
-                </div>
-
-                <!-- Signup Form -->
-                <div id="signup-form" style="display:none;">
-                    <p class="sub-title">새 계정 만들기</p>
-                    <div class="auth-input-wrap">
-                        <input type="text" id="signup-id" maxlength="20" placeholder="아이디 (2~20자)" autocomplete="off">
-                    </div>
-                    <div class="auth-input-wrap">
-                        <input type="password" id="signup-pw" maxlength="30" placeholder="비밀번호 (4자 이상)" autocomplete="new-password">
-                    </div>
-                    <div class="auth-input-wrap">
-                        <input type="password" id="signup-pw-confirm" maxlength="30" placeholder="비밀번호 확인" autocomplete="new-password">
-                    </div>
-                    <p id="signup-error" class="auth-error"></p>
-                    <button id="signup-btn" class="auth-btn primary">가입하기</button>
-                    <button id="goto-login-btn" class="auth-btn link">로그인으로 돌아가기</button>
-                </div>
-            </div>
-        </div>
-
         <!-- Title Screen -->
         <div id="title-screen" style="display:none;">
             <div class="title-bg">
                 <h1>Rhythm Superstore</h1>
                 <h2>라라의 알바</h2>
-                <p id="welcome-msg" class="welcome-msg"></p>
                 <p class="sub-title">리듬을 듣고 따라하세요!</p>
                 <p class="instruction" id="start-instruction">스페이스바를 눌러 시작!</p>
                 <div class="level-select">
@@ -90,21 +820,6 @@
                     <button class="level-btn" data-level="normal">보통</button>
                     <button class="level-btn" data-level="hard">어려움</button>
                 </div>
-                <button id="ranking-btn" class="ranking-btn">랭킹 보기</button>
-            </div>
-        </div>
-
-        <!-- Ranking Screen -->
-        <div id="ranking-screen" style="display:none;">
-            <div class="ranking-content">
-                <h1>랭킹</h1>
-                <div class="ranking-tabs">
-                    <button class="ranking-tab selected" data-level="easy">쉬움</button>
-                    <button class="ranking-tab" data-level="normal">보통</button>
-                    <button class="ranking-tab" data-level="hard">어려움</button>
-                </div>
-                <div id="ranking-list" class="ranking-list"></div>
-                <button id="ranking-back-btn" class="ranking-btn">돌아가기</button>
             </div>
         </div>
 
@@ -208,6 +923,624 @@
         <div id="feedback-overlay"></div>
     </div>
 
-    <script src="game.js"></script>
+<script>
+// ========== AUDIO ==========
+class Audio {
+    constructor() { this.ctx = null; }
+
+    init() {
+        if (this.ctx) return;
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    play(freq, dur, type = 'square', vol = 0.1, delay = 0) {
+        if (!this.ctx) return;
+        const o = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        o.connect(g); g.connect(this.ctx.destination);
+        o.type = type;
+        o.frequency.setValueAtTime(freq, this.ctx.currentTime + delay);
+        g.gain.setValueAtTime(vol, this.ctx.currentTime + delay);
+        g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + delay + dur);
+        o.start(this.ctx.currentTime + delay);
+        o.stop(this.ctx.currentTime + delay + dur);
+    }
+
+    beep()    { this.play(520, 0.1, 'square', 0.08); }
+    beepHi()  { this.play(880, 0.1, 'square', 0.08); }
+    tick()    { this.play(600, 0.12, 'sine', 0.1); }
+    tickHi()  { this.play(900, 0.12, 'sine', 0.12); }
+
+    scanPerfect() {
+        this.play(880, 0.08, 'square', 0.1);
+        this.play(1320, 0.1, 'square', 0.1, 0.04);
+    }
+    scanGood() { this.play(660, 0.1, 'square', 0.08); }
+    scanMiss() { this.play(200, 0.15, 'sawtooth', 0.06); }
+
+    jingle() {
+        [523, 659, 784, 1047].forEach((f, i) => this.play(f, 0.2, 'triangle', 0.06, i * 0.1));
+    }
+}
+
+// ========== ITEMS ==========
+const ITEMS = ['📱','🦕','🌺','⚽','🍌','🎾','🧸','📦','🍎','🥤','🍪','🎨','🍫','🧃','🎀','🍩','🎈','🌸','🧴','🕹️'];
+
+// ========== PATTERNS ==========
+function getPatterns(level) {
+    const L = 500; // lead-in so first beat isn't at t=0
+    const easy = [
+        [L, L+500, L+1000, L+1500],
+        [L, L+500, L+1000, L+1500],
+        [L, L+400, L+800, L+1500],
+        [L, L+500, L+1000, L+1500, L+2000],
+        [L, L+400, L+800, L+1200, L+1600],
+        [L, L+600, L+1000, L+1400, L+2000],
+    ];
+    const normal = [
+        [L, L+300, L+600, L+1000, L+1400, L+1800],
+        [L, L+250, L+500, L+750, L+1200, L+1600],
+        [L, L+400, L+600, L+1000, L+1250, L+1500, L+1800],
+        [L, L+250, L+500, L+1000, L+1250, L+1500, L+2000],
+        [L, L+300, L+600, L+900, L+1200, L+1500, L+1800],
+        [L, L+250, L+500, L+750, L+1250, L+1500, L+1750],
+    ];
+    const hard = [
+        [L, L+200, L+400, L+600, L+1000, L+1200, L+1500, L+1800],
+        [L, L+250, L+500, L+750, L+1000, L+1250, L+1500, L+1750],
+        [L, L+200, L+400, L+700, L+900, L+1200, L+1500, L+1700, L+2000],
+        [L, L+250, L+500, L+750, L+1000, L+1250, L+1500, L+1750, L+2000],
+        [L, L+200, L+500, L+700, L+1000, L+1200, L+1400, L+1700, L+2000],
+        [L, L+250, L+400, L+600, L+800, L+1000, L+1250, L+1500, L+1750],
+    ];
+    return level === 'easy' ? easy : level === 'normal' ? normal : hard;
+}
+
+// ========== DEVICE ==========
+const STORAGE_KEY_DEVICE = 'rhythm_superstore_device';
+
+function getSavedDevice() {
+    return localStorage.getItem(STORAGE_KEY_DEVICE) || '';
+}
+
+function saveDevice(type) {
+    localStorage.setItem(STORAGE_KEY_DEVICE, type);
+}
+
+// ========== GAME ==========
+const game = {
+    state: 'device', // starts at device screen
+    phase: 'idle',
+    level: 'easy',
+    audio: new Audio(),
+    deviceType: '', // 'mobile' or 'pc'
+
+    round: 0,
+    totalRounds: 8,
+    patterns: [],
+    pattern: [],
+    items: [],
+    noteElements: [],
+
+    playStartTime: 0,
+    playBeatIdx: 0,
+    timeouts: [],
+
+    score: 0, combo: 0, maxCombo: 0,
+    perfect: 0, good: 0, miss: 0,
+    perfectW: 180, goodW: 350,
+
+    // Fall area dimensions
+    fallAreaHeight: 0,
+    hitLineY: 0,
+
+    init() {
+        // Check for saved device type
+        const savedDevice = getSavedDevice();
+        if (savedDevice) {
+            this.deviceType = savedDevice;
+            this.applyDeviceMode();
+            this.showTitleScreen();
+        }
+
+        // Device selection buttons
+        document.querySelectorAll('.device-btn').forEach(btn => {
+            btn.addEventListener('click', () => this.selectDevice(btn.dataset.device));
+        });
+
+        // Level buttons
+        document.querySelectorAll('.level-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                this.level = btn.dataset.level;
+            });
+        });
+
+        // Keyboard input (PC mode)
+        document.addEventListener('keydown', e => {
+            if (e.code === 'Space') { e.preventDefault(); this.input(); }
+        });
+
+        // Touch input for mobile mode - title screen
+        document.getElementById('title-screen').addEventListener('touchstart', e => {
+            if (this.deviceType !== 'mobile') return;
+            if (e.target.closest('.level-btn')) return;
+            e.preventDefault();
+            this.input();
+        }, { passive: false });
+
+        // Touch input for mobile mode - game play area
+        document.getElementById('fall-area').addEventListener('touchstart', e => {
+            if (this.deviceType !== 'mobile') return;
+            e.preventDefault();
+            if (this.state === 'playing' && this.phase === 'play') this.tap();
+        }, { passive: false });
+
+        // Touch input for mobile mode - result screen
+        document.getElementById('result-screen').addEventListener('touchstart', e => {
+            if (this.deviceType !== 'mobile') return;
+            e.preventDefault();
+            this.input();
+        }, { passive: false });
+
+        // Click input for fall-area (PC fallback)
+        document.getElementById('fall-area').addEventListener('click', () => {
+            if (this.state === 'playing' && this.phase === 'play') this.tap();
+        });
+    },
+
+    selectDevice(type) {
+        this.deviceType = type;
+        saveDevice(type);
+        this.applyDeviceMode();
+        this.showTitleScreen();
+    },
+
+    applyDeviceMode() {
+        if (this.deviceType === 'mobile') {
+            document.body.classList.add('mobile-mode');
+        } else {
+            document.body.classList.remove('mobile-mode');
+        }
+    },
+
+    updateInstructions() {
+        const isMobile = this.deviceType === 'mobile';
+        const startEl = document.getElementById('start-instruction');
+        const resultEl = document.getElementById('result-instruction');
+        if (startEl) startEl.textContent = isMobile ? '화면을 터치해 시작!' : '스페이스바를 눌러 시작!';
+        if (resultEl) resultEl.textContent = isMobile ? '화면을 터치해 다시 시작!' : '스페이스바를 눌러 다시 시작!';
+    },
+
+    showTitleScreen() {
+        this.state = 'title';
+        document.getElementById('device-screen').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'none';
+        document.getElementById('game-screen').style.display = 'none';
+        document.getElementById('title-screen').style.display = 'flex';
+        this.updateInstructions();
+    },
+
+    input() {
+        if (this.state === 'title') this.start();
+        else if (this.state === 'playing' && this.phase === 'play') this.tap();
+        else if (this.state === 'result') this.toTitle();
+    },
+
+    start() {
+        this.audio.init();
+        this.state = 'playing';
+        this.phase = 'idle';
+        this.round = 0;
+        this.score = this.combo = this.maxCombo = this.perfect = this.good = this.miss = 0;
+
+        const cfg = {
+            easy:   { rounds: 7,  pW: 150, gW: 300 },
+            normal: { rounds: 9,  pW: 110, gW: 240 },
+            hard:   { rounds: 12, pW: 75,  gW: 180 },
+        }[this.level];
+        this.totalRounds = cfg.rounds;
+        this.perfectW = cfg.pW;
+        this.goodW = cfg.gW;
+        this.patterns = getPatterns(this.level);
+
+        document.getElementById('title-screen').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'none';
+        document.getElementById('game-screen').style.display = 'block';
+        document.getElementById('falling-items').innerHTML = '';
+        document.getElementById('feedback-overlay').innerHTML = '';
+
+        // Measure fall area
+        const fallArea = document.getElementById('fall-area');
+        this.fallAreaHeight = fallArea.clientHeight;
+        const hitZone = document.getElementById('hit-zone');
+        this.hitLineY = hitZone.offsetTop;
+
+        this.updateHUD();
+        this.updateProgress();
+
+        setTimeout(() => this.nextRound(), 600);
+    },
+
+    customerEmojis: ['🐰','🐻','🐱','🧑','🐧','🐸','🐶','🦊','🐼','🐨'],
+
+    nextRound() {
+        if (this.round >= this.totalRounds) { this.endGame(); return; }
+
+        this.pattern = this.patterns[this.round % this.patterns.length];
+        this.items = this.pattern.map(() => ITEMS[Math.floor(Math.random() * ITEMS.length)]);
+        this.noteElements = [];
+        this.updateProgress();
+
+        document.getElementById('falling-items').innerHTML = '';
+
+        // Update customer emoji
+        const sprite = document.getElementById('customer-sprite');
+        if (sprite) sprite.textContent = this.customerEmojis[this.round % this.customerEmojis.length];
+
+        this.listenPhase();
+    },
+
+    // ===== LISTEN PHASE: notes fall down to hit line =====
+    listenPhase() {
+        this.phase = 'listen';
+        this.setLabel('듣기');
+
+        const container = document.getElementById('falling-items');
+        container.innerHTML = '';
+
+        const fallDuration = 1200; // ms for note to fall from top to hit line
+        const hitY = this.hitLineY - 36; // center of note at hit line
+        const startDelay = 300; // small delay before first note
+
+        // For each beat, create a note that falls and arrives at hitY at beat time
+        this.pattern.forEach((beatTime, i) => {
+            const el = document.createElement('div');
+            el.className = 'falling-note listen-note';
+            el.textContent = this.items[i];
+            el.style.left = this.getNoteX(i) + 'px';
+            el.style.top = '-70px';
+            el.style.opacity = '0';
+            container.appendChild(el);
+
+            // Start falling so it arrives at hitY at the right time
+            const fallStart = startDelay + beatTime - fallDuration;
+            const actualFallStart = Math.max(0, fallStart);
+            const actualFallDuration = fallDuration - (actualFallStart - fallStart);
+
+            const t1 = setTimeout(() => {
+                el.style.opacity = '1';
+                el.style.transition = `top ${actualFallDuration}ms linear`;
+                el.style.top = hitY + 'px';
+            }, actualFallStart);
+            this.timeouts.push(t1);
+
+            // Play beep when note reaches hit line
+            const t2 = setTimeout(() => {
+                this.audio.beep();
+                // Flash the hit zone
+                const hz = document.getElementById('hit-zone');
+                hz.classList.add('active');
+                setTimeout(() => hz.classList.remove('active'), 120);
+                // Pulse the note
+                el.style.transform = 'scale(1.2)';
+                setTimeout(() => { el.style.transform = 'scale(1)'; }, 150);
+            }, startDelay + beatTime);
+            this.timeouts.push(t2);
+        });
+
+        // After listen, transition to play phase
+        const lastBeat = this.pattern[this.pattern.length - 1];
+        const t3 = setTimeout(() => this.transitionToPlay(), startDelay + lastBeat + 600);
+        this.timeouts.push(t3);
+    },
+
+    getNoteX(index) {
+        const containerWidth = document.getElementById('falling-items').clientWidth || 460;
+        const noteSize = 72;
+        const margin = 45;
+        const usable = containerWidth - margin * 2;
+        const count = this.pattern.length;
+        if (count === 1) return containerWidth / 2 - noteSize / 2;
+        return margin + (usable / (count - 1)) * index - noteSize / 2;
+    },
+
+    // ===== TRANSITION: Listen -> Play =====
+    transitionToPlay() {
+        this.phase = 'ready';
+
+        // Step 1: Listen notes shimmer and fade out
+        const notes = document.querySelectorAll('.listen-note');
+        notes.forEach(n => {
+            n.style.transition = 'all 0.4s ease-out';
+            n.style.opacity = '0.3';
+            n.style.transform = 'scale(0.8)';
+        });
+
+        // Step 2: Customer nods - "네 차례!" with swoosh sound
+        const t1 = setTimeout(() => {
+            this.audio.play(400, 0.15, 'sine', 0.08);
+            this.audio.play(600, 0.15, 'sine', 0.08, 0.08);
+
+            // Show customer speech bubble
+            const bubble = document.getElementById('customer-bubble');
+            if (bubble) {
+                bubble.textContent = '네 차례!';
+                bubble.classList.add('show');
+            }
+
+            this.setLabel('');
+
+            // Nod animation on customer
+            const cust = document.getElementById('customer-sprite');
+            if (cust) {
+                cust.classList.add('nod');
+                setTimeout(() => cust.classList.remove('nod'), 500);
+            }
+        }, 400);
+        this.timeouts.push(t1);
+
+        // Step 3: Clear notes, Lala bounces to get ready
+        const t2 = setTimeout(() => {
+            document.getElementById('falling-items').innerHTML = '';
+
+            const lala = document.getElementById('lala-bottom');
+            if (lala) {
+                lala.classList.remove('bounce');
+                void lala.offsetWidth;
+                lala.classList.add('bounce');
+            }
+
+            // Ready sound - two quick ticks
+            this.audio.tick();
+        }, 900);
+        this.timeouts.push(t2);
+
+        // Step 4: "따라하기!" flash with energy
+        const t3 = setTimeout(() => {
+            const bubble = document.getElementById('customer-bubble');
+            if (bubble) bubble.classList.remove('show');
+
+            this.setLabel('따라하기!');
+            this.audio.tickHi();
+
+            // Flash the hit zone
+            const hz = document.getElementById('hit-zone');
+            hz.classList.add('active');
+            setTimeout(() => hz.classList.remove('active'), 200);
+        }, 1300);
+        this.timeouts.push(t3);
+
+        // Step 5: Start play phase
+        const t4 = setTimeout(() => {
+            this.setLabel('');
+            this.playPhase();
+        }, 1800);
+        this.timeouts.push(t4);
+    },
+
+    // ===== PLAY PHASE: ghost notes fall, player taps =====
+    playPhase() {
+        this.phase = 'play';
+        this.playStartTime = performance.now();
+        this.playBeatIdx = 0;
+        this.setLabel('');
+
+        const container = document.getElementById('falling-items');
+        container.innerHTML = '';
+        this.noteElements = [];
+
+        const hitY = this.hitLineY - 36;
+        const fallDuration = 1200;
+
+        // Create ghost notes that fall to hit line at pattern timing
+        this.pattern.forEach((beatTime, i) => {
+            const el = document.createElement('div');
+            el.className = 'falling-note ghost-note';
+            el.textContent = this.items[i];
+            el.style.left = this.getNoteX(i) + 'px';
+            el.style.top = '-70px';
+            el.style.opacity = '0';
+            container.appendChild(el);
+            this.noteElements.push(el);
+
+            const fallStart = beatTime - fallDuration;
+            const actualFallStart = Math.max(0, fallStart);
+            const actualFallDuration = fallDuration - (actualFallStart - fallStart);
+
+            const t = setTimeout(() => {
+                el.style.opacity = '';
+                el.style.transition = `top ${actualFallDuration}ms linear`;
+                el.style.top = hitY + 'px';
+            }, actualFallStart);
+            this.timeouts.push(t);
+        });
+
+        // Timeout to end play phase
+        const lastBeat = this.pattern[this.pattern.length - 1];
+        const endT = setTimeout(() => this.endPlayPhase(), lastBeat + 2000);
+        this.timeouts.push(endT);
+        this._playEndTimeout = endT;
+    },
+
+    tap() {
+        if (this.phase !== 'play') return;
+
+        const tapTime = performance.now() - this.playStartTime;
+        const idx = this.playBeatIdx;
+        if (idx >= this.pattern.length) return;
+
+        const expected = this.pattern[idx];
+        const diff = Math.abs(tapTime - expected);
+
+        // Bounce Lala
+        const lala = document.getElementById('lala-bottom');
+        lala.classList.remove('bounce');
+        void lala.offsetWidth;
+        lala.classList.add('bounce');
+
+        // Hit zone flash
+        const hz = document.getElementById('hit-zone');
+
+        let result;
+        if (diff <= this.perfectW) {
+            result = 'perfect';
+            this.perfect++;
+            this.combo++;
+            this.score += 300 + Math.floor(this.combo / 5) * 50;
+            this.audio.scanPerfect();
+            hz.classList.add('active');
+            setTimeout(() => hz.classList.remove('active'), 120);
+
+            const mouth = document.querySelector('.lala-mouth');
+            if (mouth) { mouth.classList.add('happy'); setTimeout(() => mouth.classList.remove('happy'), 300); }
+        } else if (diff <= this.goodW) {
+            result = 'good';
+            this.good++;
+            this.combo++;
+            this.score += 150 + Math.floor(this.combo / 5) * 25;
+            this.audio.scanGood();
+            hz.classList.add('active');
+            setTimeout(() => hz.classList.remove('active'), 120);
+        } else {
+            result = 'miss';
+            this.miss++;
+            this.combo = 0;
+            this.audio.scanMiss();
+            hz.classList.add('miss');
+            setTimeout(() => hz.classList.remove('miss'), 150);
+        }
+
+        if (this.combo > this.maxCombo) this.maxCombo = this.combo;
+
+        // Animate the note
+        const el = this.noteElements[idx];
+        if (el) {
+            el.classList.remove('ghost-note');
+            el.classList.add('hit-' + result);
+        }
+
+        this.showFeedback(result);
+        this.playBeatIdx++;
+        this.updateHUD();
+
+        // All beats tapped -> end early
+        if (this.playBeatIdx >= this.pattern.length) {
+            clearTimeout(this._playEndTimeout);
+            setTimeout(() => this.endPlayPhase(), 400);
+        }
+    },
+
+    endPlayPhase() {
+        // Remaining beats are misses
+        while (this.playBeatIdx < this.pattern.length) {
+            this.miss++;
+            this.combo = 0;
+            const el = this.noteElements[this.playBeatIdx];
+            if (el) { el.classList.remove('ghost-note'); el.classList.add('hit-miss'); }
+            this.showFeedback('miss');
+            this.playBeatIdx++;
+        }
+        this.updateHUD();
+
+        this.phase = 'roundEnd';
+        this.audio.jingle();
+        this.round++;
+        this.updateProgress();
+
+        // Customer reacts based on performance
+        const roundMisses = this.miss; // approximate
+        const bubble = document.getElementById('customer-bubble');
+        if (bubble) {
+            bubble.textContent = roundMisses === 0 ? '완벽해요!' : '좋아요!';
+            bubble.classList.add('show');
+            setTimeout(() => bubble.classList.remove('show'), 1000);
+        }
+
+        this.setLabel(this.round >= this.totalRounds ? '끝!' : '다음 손님!');
+
+        const t = setTimeout(() => {
+            if (this.round >= this.totalRounds) this.endGame();
+            else this.nextRound();
+        }, 1400);
+        this.timeouts.push(t);
+    },
+
+    // ===== UI HELPERS =====
+    showFeedback(type) {
+        const overlay = document.getElementById('feedback-overlay');
+        const fb = document.createElement('div');
+        fb.className = 'feedback-text ' + type;
+        fb.textContent = type === 'perfect' ? 'PERFECT!' : type === 'good' ? 'GOOD!' : 'MISS';
+        fb.style.left = (180 + Math.random() * 140) + 'px';
+        fb.style.top = (this.hitLineY - 60 + Math.random() * 30) + 'px';
+        overlay.appendChild(fb);
+        setTimeout(() => fb.remove(), 500);
+
+        const rating = document.getElementById('rating');
+        rating.textContent = fb.textContent;
+        rating.style.color = type === 'perfect' ? '#d4960a' : type === 'good' ? '#2da855' : '#dd4444';
+    },
+
+    setLabel(text) {
+        const el = document.getElementById('phase-label');
+        if (el) {
+            el.textContent = text;
+            el.style.opacity = text ? '1' : '0';
+        }
+    },
+
+    updateHUD() {
+        document.getElementById('score').textContent = this.score.toLocaleString();
+        document.getElementById('combo').textContent = this.combo;
+        document.getElementById('round-display').textContent =
+            `라운드 ${Math.min(this.round + 1, this.totalRounds)} / ${this.totalRounds}`;
+    },
+
+    updateProgress() {
+        const pct = Math.min((this.round / this.totalRounds) * 100, 100);
+        document.getElementById('progress-fill').style.width = pct + '%';
+    },
+
+    endGame() {
+        this.state = 'result';
+        this.phase = 'idle';
+        this.timeouts.forEach(t => clearTimeout(t));
+        this.timeouts = [];
+
+        document.getElementById('game-screen').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'flex';
+
+        document.getElementById('final-score').textContent = this.score.toLocaleString();
+        document.getElementById('final-combo').textContent = this.maxCombo;
+        document.getElementById('final-perfect').textContent = this.perfect;
+        document.getElementById('final-good').textContent = this.good;
+        document.getElementById('final-miss').textContent = this.miss;
+
+        const total = this.perfect + this.good + this.miss;
+        const acc = total > 0 ? (this.perfect * 100 + this.good * 50) / (total * 100) : 0;
+        let grade = 'D';
+        if (acc >= 0.95) grade = 'S';
+        else if (acc >= 0.85) grade = 'A';
+        else if (acc >= 0.70) grade = 'B';
+        else if (acc >= 0.50) grade = 'C';
+
+        const el = document.getElementById('result-grade');
+        el.textContent = grade;
+        el.className = 'result-grade ' + grade;
+
+        this.updateInstructions();
+    },
+
+    toTitle() {
+        this.timeouts.forEach(t => clearTimeout(t));
+        this.timeouts = [];
+        this.showTitleScreen();
+    }
+};
+
+game.init();
+</script>
 </body>
 </html>
